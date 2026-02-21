@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iREP - Repertório Inteligente</title>
+    
+    <!-- === TAGS DO PWA (LIGANDO O MANIFESTO) === -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <!-- ========================================= -->
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Configuração do Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        zinc: {
+                            850: '#202023',
+                            950: '#09090b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- React e ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { background-color: black; font-family: 'Inter', sans-serif; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #18181b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #52525b; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ÍCONES INTEGRADOS ---
+        const IconBase = ({ children, className, ...props }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="24" height="24" viewBox="0 0 24 24" 
+                fill="none" stroke="currentColor" strokeWidth="2" 
+                strokeLinecap="round" strokeLinejoin="round" 
+                className={className} {...props}
+            >
+                {children}
+            </svg>
+        );
+
+        const Mic2 = (props) => <IconBase {...props}><path d="m12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0v-8a3 3 0 0 0-3-3z"/><path d="m19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="23"/><line x1="8" x2="16" y1="23" y2="23"/></IconBase>;
+        const Search = (props) => <IconBase {...props}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></IconBase>;
+        const Settings = (props) => <IconBase {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2-.3l-.15-.09a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 .3l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 .3l.15.09a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2-.3l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></IconBase>;
+        const Loader2 = (props) => <IconBase {...props}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></IconBase>;
+        const Music2 = (props) => <IconBase {...props}><circle cx="8" cy="18" r="4"/><path d="M12 18V2l7 4"/></IconBase>;
+        const AlertCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></IconBase>;
+        const X = (props) => <IconBase {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></IconBase>;
+        const Check = (props) => <IconBase {...props}><path d="M20 6 9 17 4 12"/></IconBase>;
+        const ImageIcon = (props) => <IconBase {...props}><rect height="18" rx="2" ry="2" width="18" x="3" y="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></IconBase>;
+        const LayoutGrid = (props) => <IconBase {...props}><rect height="7" rx="1" width="7" x="3" y="3"/><rect height="7" rx="1" width="7" x="14" y="3"/><rect height="7" rx="1" width="7" x="14" y="14"/><rect height="7" rx="1" width="7" x="3" y="14"/></IconBase>;
+        const Play = (props) => <IconBase {...props}><polygon points="5 3 19 12 5 21 5 3"/></IconBase>;
+        const ExternalLink = (props) => <IconBase {...props}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></IconBase>;
+        const HelpCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></IconBase>;
+        const FileSpreadsheet = (props) => <IconBase {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></IconBase>;
+        const FileText = (props) => <IconBase {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></IconBase>;
+        const PlayCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></IconBase>;
+        const ChevronDown = (props) => <IconBase {...props}><path d="m6 9 6 6 6-6"/></IconBase>;
+
+        // --- FUNÇÕES DE UTILIDADE ---
+        // Garante que links adicionados sem http:// abram em nova aba corretamente
+        const safeUrl = (url) => {
+            if (!url) return '';
+            let clean = url.trim();
+            if (clean && !clean.startsWith('http://') && !clean.startsWith('https://')) {
+                return 'https://' + clean;
+            }
+            return clean;
+        };
+
+        // Analisador CSV robusto (Trata colunas vazias e aspas perfeitamente)
+        const parseCSVRow = (text) => {
+            let result = [];
+            let curVal = '';
+            let inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                let char = text[i];
+                if (inQuotes) {
+                    if (char === '"') {
+                        if (text[i + 1] === '"') {
+                            curVal += '"';
+                            i++; 
+                        } else {
+                            inQuotes = false;
+                        }
+                    } else {
+                        curVal += char;
+                    }
+                } else {
+                    if (char === '"') {
+                        inQuotes = true;
+                    } else if (char === ',') {
+                        result.push(curVal.trim());
+                        curVal = '';
+                    } else {
+                        curVal += char;
+                    }
+                }
+            }
+            result.push(curVal.trim());
+            return result;
+        };
+
+        // --- COMPONENTE DO LOGO iREP ---
+        const IrepLogo = ({ colorClass, size = "large" }) => {
+            const height = size === "large" ? 40 : 32;
+
+            return (
+                <svg height={height} viewBox="-15 0 170 50" fill="none" xmlns="http://www.w3.org/2000/svg" className="select-none overflow-visible">
+                    <g transform="skewX(-10) translate(5, 0)">
+                        <rect x="0" y="18" width="14" height="32" rx="2" className="fill-white" />
+                        <path 
+                            d="M0 0 L18 7 L0 14 Z" 
+                            className={colorClass.replace('text-', 'fill-')} 
+                        />
+                    </g>
+                    <text 
+                        x="38" 
+                        y="50" 
+                        fontFamily="sans-serif" 
+                        fontWeight="800" 
+                        fontSize="52" 
+                        className="fill-white tracking-tighter"
+                    >
+                        REP
+                    </text>
+                </svg>
+            );
+        };
+
+        // --- COMPONENTE CARTÃO DE MÚSICA ---
+        const SongCard = ({ song, themeColors }) => {
+            const [isExpanded, setIsExpanded] = useState(false);
+
+            return (
+                <div 
+                    className={`group bg-zinc-900/30 backdrop-blur-md rounded-xl p-4 border border-zinc-800/60 hover:border-zinc-600 hover:bg-zinc-900/60 transition-all duration-300 flex justify-between items-start relative overflow-hidden ${isExpanded ? 'bg-zinc-900/80 border-zinc-700' : ''}`}
+                >
+                    <div className={`absolute -left-2 top-0 bottom-0 w-1 ${themeColors.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`}></div>
+                    <div className={`absolute -right-20 -top-20 h-40 w-40 ${themeColors.glow} opacity-0 group-hover:opacity-10 blur-[60px] transition-opacity duration-500 pointer-events-none rounded-full`}></div>
+
+                    <div 
+                        className="flex-1 min-w-0 z-20 pl-2 cursor-pointer relative select-none" 
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        title={isExpanded ? "Clique para recolher" : "Clique para ver nome completo"}
+                        style={{ textAlign: 'left' }}
+                    >
+                        <div className="flex items-start gap-1">
+                            <h3 
+                                className={`text-base font-extrabold text-zinc-100 tracking-tight transition-all duration-200 ${isExpanded ? 'whitespace-normal break-words' : 'truncate'}`}
+                                style={{ textAlign: 'left', display: 'block' }}
+                            >
+                                {song.titulo}
+                            </h3>
+                            <ChevronDown className={`h-4 w-4 text-zinc-600 shrink-0 transition-transform mt-1 ${isExpanded ? 'rotate-180' : ''}`} />
+                        </div>
+                        
+                        <div className="flex items-start mt-1">
+                            <Mic2 className={`h-3 w-3 mr-1.5 text-zinc-500 opacity-70 shrink-0 ${isExpanded ? 'mt-1' : 'mt-0.5'}`} />
+                            <span 
+                                className={`text-xs font-semibold uppercase tracking-wide text-zinc-500 transition-all duration-200 ${isExpanded ? 'whitespace-normal break-words' : 'truncate'}`}
+                                style={{ textAlign: 'left', display: 'block' }}
+                            >
+                                {song.artista}
+                            </span>
+                        </div>
+
+                        {song.temas && (
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                                {song.temas.split(',').slice(0, 3).map((tag, tIdx) => (
+                                    <span key={tIdx} className={`text-[9px] px-2 py-0.5 rounded-sm font-bold uppercase tracking-wider ${themeColors.badge}`}>
+                                        {tag.trim()}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="ml-4 flex items-center gap-2 z-20 flex-shrink-0 pt-0.5">
+                        {song.letra && (
+                            <a 
+                                href={safeUrl(song.letra)} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className={`h-10 w-10 flex items-center justify-center rounded-lg border border-zinc-800 bg-black/40 hover:bg-zinc-800 hover:border-zinc-600 hover:text-white text-zinc-500 transition-all cursor-pointer`}
+                                title="Ver Letra/Cifra"
+                            >
+                                <FileText className="h-5 w-5" />
+                            </a>
+                        )}
+
+                        {song.video && (
+                            <a 
+                                href={safeUrl(song.video)} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className={`h-10 w-10 flex items-center justify-center rounded-lg border border-zinc-800 bg-black/40 hover:bg-red-900/30 hover:border-red-800 hover:text-red-500 text-zinc-500 transition-all cursor-pointer`}
+                                title="Ver Vídeo"
+                            >
+                                <PlayCircle className="h-5 w-5" />
+                            </a>
+                        )}
+
+                        <div className={`flex flex-col items-center justify-center h-12 w-12 rounded-lg border ${themeColors.border} bg-black/60 shadow-lg ml-1`}>
+                            <span className={`text-[9px] font-black uppercase opacity-50 ${themeColors.text}`}>Tom</span>
+                            <span className={`text-lg font-black ${themeColors.text}`}>{song.tom || '-'}</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- DADOS DE EXEMPLO ---
+        const DADOS_EXEMPLO = [
+            { titulo: "Lugar Secreto", artista: "Gabriela Rocha", tom: "A", temas: "Adoração, Intimidade", letra: "https://www.vagalume.com.br/gabriela-rocha/lugar-secreto.html", video: "https://www.youtube.com/watch?v=85oZq68T-jE" },
+            { titulo: "Porque Ele Vive", artista: "Harpa Cristã", tom: "G", temas: "Celebração, Páscoa, Clássico", letra: "", video: "" },
+            { titulo: "Ousado Amor", artista: "Isaias Saad", tom: "F#", temas: "Amor de Deus, Adoração", letra: "https://www.letras.mus.br/isaias-saad/ousado-amor/", video: "https://www.youtube.com/watch?v=s1X9X_VwG9U" },
+            { titulo: "Em Teu Braços", artista: "Laura Souguellis", tom: "D", temas: "Descanso, Confiança" },
+            { titulo: "Teu Reino", artista: "Ministério Cristo Vivo", tom: "C", temas: "Reino, Missões, Evangelismo" },
+            { titulo: "Santo Espírito", artista: "Laura Souguellis", tom: "E", temas: "Espírito Santo" },
+            { titulo: "A Ele a Glória", artista: "Diante do Trono", tom: "C", temas: "Adoração, Majestade" },
+        ];
+
+        const App = () => {
+            const [songs, setSongs] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [activeTheme, setActiveTheme] = useState('Todos');
+            const [searchTerm, setSearchTerm] = useState('');
+            
+            const [sheetUrl, setSheetUrl] = useState('');
+            const [accentColor, setAccentColor] = useState('indigo');
+            
+            const [showSettings, setShowSettings] = useState(false);
+            const [showThemesModal, setShowThemesModal] = useState(false);
+            const [showHelp, setShowHelp] = useState(true);
+            const [error, setError] = useState('');
+            const [availableThemes, setAvailableThemes] = useState(['Todos']);
+
+            const safeStorage = {
+                get: (key) => { try { return localStorage.getItem(key); } catch(e) { return null; } },
+                set: (key, val) => { try { localStorage.setItem(key, val); } catch(e) {} },
+                remove: (key) => { try { localStorage.removeItem(key); } catch(e) {} }
+            };
+
+            useEffect(() => {
+                const savedUrl = safeStorage.get('iRepSheetUrl');
+                const savedColor = safeStorage.get('iRepColor');
+
+                if (savedColor) setAccentColor(savedColor);
+
+                if (savedUrl) {
+                    setSheetUrl(savedUrl);
+                    fetchData(savedUrl);
+                    setShowHelp(false);
+                } else {
+                    setSongs(DADOS_EXEMPLO);
+                    extractThemes(DADOS_EXEMPLO);
+                }
+            }, []);
+
+            const extractThemes = (data) => {
+                const themesSet = new Set();
+                data.forEach(song => {
+                    if (song.temas) {
+                        const songThemes = song.temas.split(',').map(t => t.trim());
+                        songThemes.forEach(t => { if(t) themesSet.add(t); });
+                    }
+                });
+                const sortedThemes = Array.from(themesSet).sort();
+                setAvailableThemes(['Todos', ...sortedThemes]);
+            };
+
+            const processUrl = (url) => {
+                if (!url) return '';
+                let cleanUrl = url.trim().replace(/[\n\r]+/g, '');
+                if (cleanUrl.includes('/edit')) {
+                    return cleanUrl.replace(/\/edit.*$/, '/export?format=csv');
+                }
+                return cleanUrl;
+            };
+
+            const csvToJson = (csvText) => {
+                if (!csvText) return [];
+                const lines = csvText.split('\n');
+                if (lines.length < 1) return [];
+                
+                const headers = parseCSVRow(lines[0]).map(h => h.toLowerCase());
+                const getIndex = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
+                
+                let idxTitle = getIndex(['titulo', 'título', 'nome', 'musica', 'música']);
+                let idxArtist = getIndex(['artista', 'banda', 'cantor']);
+                let idxKey = getIndex(['tom', 'nota', 'key']);
+                let idxTheme = getIndex(['tema', 'tags', 'categoria']);
+                let idxLetra = getIndex(['letra', 'cifra', 'vagalume', 'lyrics', 'link']);
+                let idxVideo = getIndex(['video', 'vídeo', 'youtube', 'assistir', 'clipe', 'url']);
+
+                if (idxLetra === idxVideo && idxLetra !== -1) {
+                    const headerName = headers[idxLetra];
+                    if (headerName.includes('video') || headerName.includes('youtube')) idxLetra = -1;
+                    else idxVideo = -1;
+                }
+
+                if (idxTitle === -1 && headers.length >= 1) {
+                    idxTitle = 0;
+                    if (idxArtist === -1 && headers.length > 1) idxArtist = 1;
+                    if (idxKey === -1 && headers.length > 2) idxKey = 2;
+                    if (idxTheme === -1 && headers.length > 3) idxTheme = 3;
+                }
+
+                if (idxTitle === -1 || lines[0].trim().startsWith('<!DOCTYPE') || lines[0].trim().includes('<html')) {
+                    throw new Error("O link retornou uma página Web em vez de dados CSV. Certifique-se de usar a opção 'Publicar na Web' (Formato CSV).");
+                }
+
+                const result = [];
+                for (let i = 1; i < lines.length; i++) {
+                    if (!lines[i].trim()) continue; 
+                    
+                    const cols = parseCSVRow(lines[i]);
+                    
+                    if (cols[idxTitle] && cols[idxTitle].trim() !== '') {
+                        result.push({
+                            titulo: cols[idxTitle],
+                            artista: idxArtist > -1 && cols[idxArtist] ? cols[idxArtist] : 'Desconhecido',
+                            tom: idxKey > -1 && cols[idxKey] ? cols[idxKey] : '',
+                            temas: idxTheme > -1 && cols[idxTheme] ? cols[idxTheme] : '',
+                            letra: idxLetra > -1 && cols[idxLetra] ? cols[idxLetra] : '',
+                            video: idxVideo > -1 && cols[idxVideo] ? cols[idxVideo] : ''
+                        });
+                    }
+                }
+                return result;
+            };
+
+            const fetchData = async (url) => {
+                if (!url) return;
+                setLoading(true);
+                setError('');
+                const processedUrl = processUrl(url);
+                const tryFetch = async (targetUrl) => {
+                    const response = await fetch(targetUrl);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return await response.text();
+                };
+
+                try {
+                    let csvData = null;
+                    let success = false;
+                    
+                    try {
+                        csvData = await tryFetch(processedUrl);
+                        if(csvData && !csvData.trim().startsWith('<')) success = true;
+                    } catch (e) { console.warn("Direto falhou, ativando proxy..."); }
+
+                    if (!success) {
+                        try {
+                            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(processedUrl)}`;
+                            csvData = await tryFetch(proxyUrl);
+                            if(csvData && !csvData.trim().startsWith('<')) success = true;
+                        } catch (e) {}
+                    }
+
+                    if (!success) {
+                        try {
+                            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(processedUrl)}`;
+                            csvData = await tryFetch(proxyUrl);
+                            if(csvData && !csvData.trim().startsWith('<')) success = true;
+                        } catch (e) {}
+                    }
+
+                    if (!success || !csvData) throw new Error("Acesso bloqueado ou link inválido.");
+
+                    const parsedData = csvToJson(csvData);
+                    if (parsedData.length === 0) throw new Error('A planilha está conectada, mas vazia ou sem títulos válidos.');
+
+                    setSongs(parsedData);
+                    extractThemes(parsedData);
+                    safeStorage.set('iRepSheetUrl', url);
+                    setShowSettings(false);
+                } catch (err) {
+                    console.error("Erro no processamento:", err);
+                    setError(`Falha ao conectar: ${err.message}`);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleSaveSettings = (e) => {
+                e.preventDefault();
+                safeStorage.set('iRepColor', accentColor);
+                fetchData(sheetUrl);
+            };
+
+            const handleReset = () => {
+                safeStorage.remove('iRepSheetUrl');
+                setSheetUrl('');
+                setSongs(DADOS_EXEMPLO);
+                extractThemes(DADOS_EXEMPLO);
+                setShowSettings(false);
+                setError('');
+                setShowHelp(true);
+            }
+
+            const filteredSongs = songs.filter(song => {
+                const matchesTheme = activeTheme === 'Todos' || (song.temas && song.temas.includes(activeTheme));
+                const matchesSearch = 
+                    song.titulo.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    song.artista.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (song.temas && song.temas.toLowerCase().includes(searchTerm.toLowerCase()));
+                return matchesTheme && matchesSearch;
+            });
+
+            const getAccentColor = () => {
+                const colors = {
+                    indigo: { bg: 'bg-indigo-600', fill: 'fill-indigo-500', text: 'text-indigo-400', border: 'border-indigo-500/30', ring: 'focus:ring-indigo-500', badge: 'bg-indigo-500/10 text-indigo-300', glow: 'bg-indigo-500' },
+                    violet: { bg: 'bg-violet-600', fill: 'fill-violet-500', text: 'text-violet-400', border: 'border-violet-500/30', ring: 'focus:ring-violet-500', badge: 'bg-violet-500/10 text-violet-300', glow: 'bg-violet-500' },
+                    blue: { bg: 'bg-blue-600', fill: 'fill-blue-500', text: 'text-blue-400', border: 'border-blue-500/30', ring: 'focus:ring-blue-500', badge: 'bg-blue-500/10 text-blue-300', glow: 'bg-blue-500' },
+                    rose: { bg: 'bg-rose-600', fill: 'fill-rose-500', text: 'text-rose-400', border: 'border-rose-500/30', ring: 'focus:ring-rose-500', badge: 'bg-rose-500/10 text-rose-300', glow: 'bg-rose-500' },
+                    emerald: { bg: 'bg-emerald-600', fill: 'fill-emerald-500', text: 'text-emerald-400', border: 'border-emerald-500/30', ring: 'focus:ring-emerald-500', badge: 'bg-emerald-500/10 text-emerald-300', glow: 'bg-emerald-500' },
+                    orange: { bg: 'bg-orange-600', fill: 'fill-orange-500', text: 'text-orange-400', border: 'border-orange-500/30', ring: 'focus:ring-orange-500', badge: 'bg-orange-500/10 text-orange-300', glow: 'bg-orange-500' },
+                };
+                return colors[accentColor] || colors.indigo;
+            };
+
+            const themeColors = getAccentColor();
+            
+            const MAX_VISIBLE_THEMES = 5;
+            const quickAccessThemes = availableThemes.slice(0, MAX_VISIBLE_THEMES);
+            const hasMoreThemes = availableThemes.length > MAX_VISIBLE_THEMES;
+            const displayThemes = [...quickAccessThemes];
+            if (activeTheme !== 'Todos' && !displayThemes.includes(activeTheme)) {
+                displayThemes.push(activeTheme);
+            }
+
+            return (
+                <div className="min-h-screen bg-black text-white font-sans selection:bg-zinc-700">
+                    
+                    {/* Header */}
+                    <header className="bg-black/80 backdrop-blur-xl border-b border-zinc-900 sticky top-0 z-20">
+                        <div className="max-w-4xl mx-auto p-4">
+                            <div className="flex justify-between items-center mb-4">
+                                <div className="flex items-center">
+                                    <IrepLogo colorClass={themeColors.text} />
+                                </div>
+                                
+                                <button 
+                                    onClick={() => setShowSettings(true)}
+                                    className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-900 rounded-full transition-colors"
+                                >
+                                    <Settings className="h-6 w-6" />
+                                </button>
+                            </div>
+
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Search className="h-5 w-5 text-zinc-600 group-focus-within:text-white transition-colors" />
+                                </div>
+                                <input
+                                    type="text"
+                                    className={`block w-full pl-10 pr-3 py-3 border border-zinc-800 rounded-xl leading-5 bg-zinc-900/40 text-zinc-200 placeholder-zinc-700 focus:outline-none focus:border-zinc-600 focus:ring-1 ${themeColors.ring} focus:bg-zinc-900 sm:text-sm transition-all`}
+                                    placeholder="Buscar música, artista..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="max-w-4xl mx-auto p-4 pb-24">
+                        
+                        {/* Barra de Temas */}
+                        <div className="mb-8 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                            <div className="flex gap-2 items-center">
+                                {displayThemes.map(theme => (
+                                    <button
+                                        key={theme}
+                                        onClick={() => setActiveTheme(theme)}
+                                        className={`whitespace-nowrap px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all duration-300 ${
+                                            activeTheme === theme 
+                                                ? `${themeColors.bg} text-white shadow-lg shadow-black` 
+                                                : 'bg-zinc-900 text-zinc-500 border border-zinc-800 hover:border-zinc-700 hover:text-zinc-300'
+                                        }`}
+                                    >
+                                        {theme}
+                                    </button>
+                                ))}
+                                
+                                {hasMoreThemes && (
+                                    <button
+                                        onClick={() => setShowThemesModal(true)}
+                                        className="whitespace-nowrap px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest bg-zinc-900 text-zinc-500 border border-zinc-800 hover:bg-zinc-800 hover:text-white flex items-center gap-1 transition-all"
+                                    >
+                                        <LayoutGrid className="h-3 w-3" />
+                                        Mais
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Lista de Músicas */}
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center py-20 text-zinc-600">
+                                <Loader2 className={`h-10 w-10 animate-spin mb-3 ${themeColors.text}`} />
+                                <p className="text-sm font-bold uppercase tracking-widest">Carregando...</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {filteredSongs.length > 0 ? (
+                                    filteredSongs.map((song, idx) => (
+                                        <SongCard key={idx} song={song} themeColors={themeColors} />
+                                    ))
+                                ) : (
+                                    <div className="col-span-full text-center py-16 text-zinc-700">
+                                        <Music2 className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                                        <p className="uppercase font-bold tracking-widest text-xs">Nenhum resultado</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Modal Temas */}
+                    {showThemesModal && (
+                        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl max-w-2xl w-full p-6 flex flex-col max-h-[80vh]">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-lg font-bold text-white flex items-center gap-2 tracking-tight">
+                                        <LayoutGrid className={`h-5 w-5 ${themeColors.text}`} />
+                                        FILTRAR POR TEMA
+                                    </h2>
+                                    <button onClick={() => setShowThemesModal(false)} className="text-zinc-500 hover:text-white p-2">
+                                        <X className="h-6 w-6" />
+                                    </button>
+                                </div>
+                                <div className="overflow-y-auto pr-2 custom-scrollbar">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {availableThemes.map(theme => (
+                                    <button
+                                        key={theme}
+                                        onClick={() => {
+                                        setActiveTheme(theme);
+                                        setShowThemesModal(false);
+                                        }}
+                                        className={`flex items-center justify-between px-4 py-3 rounded-lg border text-xs font-bold uppercase tracking-wide transition-all text-left ${
+                                        activeTheme === theme 
+                                            ? `${themeColors.bg} border-transparent text-white` 
+                                            : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:border-zinc-600 hover:text-zinc-200'
+                                        }`}
+                                    >
+                                        <span className="truncate">{theme}</span>
+                                        {activeTheme === theme && <Check className="h-4 w-4" />}
+                                    </button>
+                                    ))}
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Configurações */}
+                    {showSettings && (
+                        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl max-w-md w-full p-6 overflow-y-auto max-h-[90vh]">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-lg font-bold text-white flex items-center gap-2 tracking-tight">
+                                        <Settings className={`h-5 w-5 ${themeColors.text}`} />
+                                        CONFIGURAÇÕES
+                                    </h2>
+                                    <button onClick={() => setShowSettings(false)} className="text-zinc-500 hover:text-white p-2">
+                                        <X className="h-6 w-6" />
+                                    </button>
+                                </div>
+                                
+                                <form onSubmit={handleSaveSettings} className="space-y-6">
+                                    
+                                    {/* Ajuda Interativa */}
+                                    <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 overflow-hidden">
+                                        <button 
+                                            type="button"
+                                            onClick={() => setShowHelp(!showHelp)}
+                                            className="w-full flex items-center justify-between p-4 text-left hover:bg-zinc-800/50 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-2 text-sm font-bold text-zinc-300">
+                                                <HelpCircle className="h-4 w-4" />
+                                                Como conectar ao Google Sheets
+                                            </div>
+                                            <span className="text-zinc-500 text-xs">{showHelp ? 'Ocultar' : 'Mostrar'}</span>
+                                        </button>
+                                        
+                                        {showHelp && (
+                                            <div className="p-4 pt-0 text-xs text-zinc-400 space-y-3 border-t border-zinc-800 mt-2 pt-4">
+                                                <div className="flex gap-3">
+                                                    <div className="h-6 w-6 rounded bg-zinc-800 flex items-center justify-center shrink-0 font-bold text-white">1</div>
+                                                    <p>Na sua planilha do Google, clique em <strong>Arquivo</strong> → <strong>Compartilhar</strong> → <strong>Publicar na Web</strong>.</p>
+                                                </div>
+                                                <div className="flex gap-3">
+                                                    <div className="h-6 w-6 rounded bg-zinc-800 flex items-center justify-center shrink-0 font-bold text-white">2</div>
+                                                    <p>Mude a opção "Página da Web" para <strong>Valores separados por vírgula (.csv)</strong>.</p>
+                                                </div>
+                                                <div className="flex gap-3">
+                                                    <div className="h-6 w-6 rounded bg-zinc-800 flex items-center justify-center shrink-0 font-bold text-white">3</div>
+                                                    <p>Clique em <strong>Publicar</strong>, copie aquele link gerado e cole no campo abaixo.</p>
+                                                </div>
+
+                                                <div className="mt-4 pt-3 border-t border-zinc-800">
+                                                    <p className="font-bold text-zinc-300 mb-2 uppercase tracking-widest text-[10px]">Colunas que você deve criar na 1ª linha:</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {['Titulo', 'Artista', 'Tom', 'Temas', 'Letra', 'Video'].map(col => (
+                                                            <span key={col} className="bg-zinc-800 text-zinc-300 px-2 py-1 rounded border border-zinc-700 text-[10px]">{col}</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Seletor de Cores */}
+                                    <div>
+                                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">Cor de Destaque</label>
+                                        <div className="flex gap-3 justify-center">
+                                            {['indigo', 'violet', 'blue', 'rose', 'emerald', 'orange'].map(color => (
+                                                <button
+                                                    key={color}
+                                                    type="button"
+                                                    onClick={() => setAccentColor(color)}
+                                                    className={`h-10 w-10 rounded-full border-2 transition-all ${accentColor === color ? 'border-white scale-110' : 'border-transparent opacity-30 hover:opacity-100'}`}
+                                                    style={{ backgroundColor: `var(--color-${color}-600)` }}
+                                                >
+                                                    <div className={`w-full h-full rounded-full bg-${color}-600`}></div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Link da Planilha */}
+                                    <div>
+                                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 flex justify-between">
+                                            <span>Link CSV (Publicado na Web)</span>
+                                            <FileSpreadsheet className="h-4 w-4" />
+                                        </label>
+                                        <input
+                                            type="url"
+                                            required
+                                            placeholder="https://docs.google.com/spreadsheets/.../pub?output=csv"
+                                            className={`w-full px-4 py-3 bg-zinc-900 border ${error ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-800 focus:border-zinc-600'} rounded-xl text-sm text-white placeholder-zinc-700 focus:outline-none focus:ring-1 ${error ? 'focus:ring-red-500' : themeColors.ring} transition-all`}
+                                            value={sheetUrl}
+                                            onChange={(e) => {
+                                                setSheetUrl(e.target.value);
+                                                setError('');
+                                            }}
+                                        />
+                                    </div>
+
+                                    {error && (
+                                        <div className="text-xs text-red-400 bg-red-950/30 border border-red-900/50 p-3 rounded-lg font-medium flex items-start gap-2">
+                                            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                                            <span>{error}</span>
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-3 pt-2">
+                                        <button 
+                                            type="button" 
+                                            onClick={handleReset}
+                                            className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-white transition-colors"
+                                        >
+                                            Resetar
+                                        </button>
+                                        <button 
+                                            type="submit" 
+                                            disabled={loading}
+                                            className={`flex-1 px-4 py-3 ${themeColors.bg} hover:brightness-110 text-white text-sm font-bold uppercase tracking-widest rounded-xl shadow-lg transition-all flex items-center justify-center gap-2`}
+                                        >
+                                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                                            {loading ? 'CONECTANDO...' : 'SALVAR'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
