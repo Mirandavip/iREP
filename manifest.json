@@ -2,10 +2,10 @@
   "name": "iREP - Repertório Inteligente",
   "short_name": "iREP",
   "description": "Aplicativo de gestão de repertório musical para equipes de louvor.",
-  "start_url": "./iRep.html",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#000000",
-  "theme_color": "#4f46e5",
+  "theme_color": "#000000",
   "orientation": "portrait-primary",
   "icons": [
     {
